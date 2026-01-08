@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>添加账单 - 个人记账系统</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <script type="text/javascript" src="/js/My97DatePicker/WdatePicker.js"></script>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 30px;
+        }
+        .navbar-custom .navbar-brand { color: white; font-size: 22px; font-weight: bold; padding: 18px 15px; }
+        .navbar-custom .nav > li > a { color: white; font-size: 15px; padding: 20px 20px; }
+        .navbar-custom .nav > li > a:hover { background-color: rgba(255,255,255,0.15); }
+        .user-info { color: rgba(255,255,255,0.9); padding: 20px 15px; display: inline-block; }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .page-header h2 { margin: 0; }
+        
+        .form-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 35px;
+        }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { font-weight: 600; color: #333; margin-bottom: 10px; font-size: 15px; }
+        .form-control {
+            height: 50px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-default {
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">💰 个人记账系统</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li><a href="/budget/list">💰 预算管理</a></li>
+                <li><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>➕ 添加新账单</h2>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="form-panel">
+                    <form action="/bill/add" method="post">
+                        <div class="form-group">
+                            <label>🏷️ 账单类型</label>
+                            <select class="form-control" name="typeId" required>
+                                <option value="">请选择类型</option>
+                                <option th:each="type : ${billTypeList}" th:value="${type.id}" th:text="${type.name}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>✏️ 标题</label>
+                            <input type="text" class="form-control" name="title" placeholder="请输入账单标题" required/>
+                        </div>
+                        <div class="form-group">
+                            <label>📅 日期</label>
+                            <input type="text" class="form-control" name="billTime" placeholder="请选择日期" onclick="WdatePicker()" required/>
+                        </div>
+                        <div class="form-group">
+                            <label>💰 金额</label>
+                            <input type="number" step="0.01" class="form-control" name="price" placeholder="请输入金额" required/>
+                        </div>
+                        <div class="form-group">
+                            <label>💬 说明</label>
+                            <input type="text" class="form-control" name="explains" placeholder="请输入说明（选填）"/>
+                        </div>
+                        <div class="form-group" style="margin-top: 35px;">
+                            <button type="submit" class="btn btn-primary">✅ 保存账单</button>
+                            <a href="/bill/list-page" class="btn btn-default" style="margin-left: 15px;">⬅️ 返回列表</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

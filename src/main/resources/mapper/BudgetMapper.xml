@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.BudgetMapper">
+    
+    <select id="getAll" resultType="Budget">
+        SELECT b.*, bt.name as typeName
+        FROM budget b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        ORDER BY b.year DESC, b.month DESC
+    </select>
+    
+    <select id="getById" resultType="Budget">
+        SELECT b.*, bt.name as typeName
+        FROM budget b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE b.id = #{id}
+    </select>
+    
+    <select id="getByCondition" resultType="Budget">
+        SELECT * FROM budget 
+        WHERE year = #{year}
+        <choose>
+            <when test="month != null">AND month = #{month}</when>
+            <otherwise>AND month IS NULL</otherwise>
+        </choose>
+        <choose>
+            <when test="typeId != null">AND type_id = #{typeId}</when>
+            <otherwise>AND type_id IS NULL</otherwise>
+        </choose>
+    </select>
+    
+    <insert id="save" parameterType="Budget" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO budget(year, month, type_id, amount)
+        VALUES (#{year}, #{month}, #{typeId}, #{amount})
+    </insert>
+    
+    <update id="update" parameterType="Budget">
+        UPDATE budget SET amount = #{amount} WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM budget WHERE id = #{id}
+    </delete>
+    
+    <!-- 获取某月支出总额（排除收入类型） -->
+    <select id="getMonthlyExpense" resultType="Double">
+        SELECT COALESCE(SUM(b.price), 0)
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE YEAR(b.bill_time) = #{year} 
+        AND MONTH(b.bill_time) = #{month}
+        AND bt.name != '收入'
+    </select>
+    
+    <!-- 获取某年支出总额 -->
+    <select id="getYearlyExpense" resultType="Double">
+        SELECT COALESCE(SUM(b.price), 0)
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE YEAR(b.bill_time) = #{year}
+        AND bt.name != '收入'
+    </select>
+    
+    <!-- 获取某月某分类支出 -->
+    <select id="getCategoryExpense" resultType="Double">
+        SELECT COALESCE(SUM(price), 0)
+        FROM bill
+        WHERE YEAR(bill_time) = #{year}
+        <if test="month != null">AND MONTH(bill_time) = #{month}</if>
+        AND type_id = #{typeId}
+    </select>
+</mapper>

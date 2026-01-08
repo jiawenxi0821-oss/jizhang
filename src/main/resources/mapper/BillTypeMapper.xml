@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.BillTypeMapper">
+    <select id="get" resultType="BillType">
+        SELECT id, name FROM bill_type ORDER BY id
+    </select>
+
+    <select id="getById" resultType="BillType">
+        SELECT id, name FROM bill_type WHERE id = #{id}
+    </select>
+
+    <!-- 关联查询：分类及其账单数量 -->
+    <select id="getWithBillCount" resultType="BillType">
+        SELECT 
+            bt.id, 
+            bt.name, 
+            COUNT(b.id) as billCount
+        FROM bill_type bt
+        LEFT JOIN bill b ON bt.id = b.type_id
+        GROUP BY bt.id, bt.name
+        ORDER BY bt.id
+    </select>
+
+    <select id="countBillsByTypeId" resultType="int">
+        SELECT COUNT(*) FROM bill WHERE type_id = #{typeId}
+    </select>
+
+    <insert id="save" parameterType="BillType" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bill_type(name) VALUES (#{name})
+    </insert>
+
+    <update id="update" parameterType="BillType">
+        UPDATE bill_type SET name = #{name} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM bill_type WHERE id = #{id}
+    </delete>
+</mapper>

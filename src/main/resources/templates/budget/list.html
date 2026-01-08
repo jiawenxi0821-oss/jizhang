@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>预算管理</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 20px;
+        }
+        .navbar-custom .navbar-brand {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 18px 15px;
+        }
+        .navbar-custom .navbar-brand:hover {
+            color: #f0f0f0;
+        }
+        .navbar-custom .nav > li > a {
+            color: white;
+            font-size: 15px;
+            padding: 20px 20px;
+            transition: all 0.3s ease;
+        }
+        .navbar-custom .nav > li > a:hover,
+        .navbar-custom .nav > li > a:focus {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+        }
+        .navbar-custom .nav > li.active > a {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .user-info {
+            color: rgba(255,255,255,0.9);
+            padding: 20px 15px;
+            display: inline-block;
+        }
+        .progress { height: 25px; margin-bottom: 0; }
+        .progress-bar { line-height: 25px; }
+        .over-budget { background-color: #d9534f !important; }
+        .warning-budget { background-color: #f0ad4e !important; }
+        .safe-budget { background-color: #5cb85c !important; }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">
+                    💰 个人记账系统
+                </a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li class="active"><a href="/budget/list">💰 预算管理</a></li>
+                <li><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li th:if="${session.loginUser != null}">
+                    <span class="user-info">
+                        👤 欢迎，<span th:text="${session.loginUser.username}">用户</span>
+                    </span>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/profile">⚙️ 个人信息</a>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/logout">🚪 退出</a>
+                </li>
+                <li th:if="${session.loginUser == null}">
+                    <a href="/user/login">🔑 登录</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+<div class="container">
+<h2>预算管理</h2>
+<br/>
+
+<!-- 筛选条件 -->
+<div class="row">
+    <div class="col-md-6">
+        <form class="form-inline" method="get" action="/budget/list">
+            <div class="form-group">
+                <label>年份：</label>
+                <select name="year" class="form-control" onchange="this.form.submit()">
+                    <option th:each="y : ${#numbers.sequence(2020, 2030)}" 
+                            th:value="${y}" th:text="${y}"
+                            th:selected="${y == currentYear}"></option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-left: 15px;">
+                <label>月份：</label>
+                <select name="month" class="form-control" onchange="this.form.submit()">
+                    <option th:each="m : ${#numbers.sequence(1, 12)}" 
+                            th:value="${m}" th:text="${m + '月'}"
+                            th:selected="${m == currentMonth}"></option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6 text-right">
+        <a href="/budget/toAdd" class="btn btn-primary">
+            ➕ 设置预算
+        </a>
+    </div>
+</div>
+<br/>
+
+<!-- 预算执行进度 -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        📊 预算执行情况
+    </div>
+    <div class="panel-body">
+        <div th:if="${#lists.isEmpty(budgets)}" class="alert alert-info">
+            暂无预算数据，请先设置预算。
+        </div>
+        <table th:if="${!#lists.isEmpty(budgets)}" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>预算类型</th>
+                    <th>预算周期</th>
+                    <th>预算金额</th>
+                    <th>已支出</th>
+                    <th>剩余</th>
+                    <th style="width: 30%">执行进度</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="budget : ${budgets}">
+                    <td>
+                        <span th:if="${budget.typeId == null}">总预算</span>
+                        <span th:if="${budget.typeId != null}" th:text="${budget.typeName}"></span>
+                    </td>
+                    <td>
+                        <span th:if="${budget.month == null}" th:text="${budget.year + '年'}"></span>
+                        <span th:if="${budget.month != null}" th:text="${budget.year + '年' + budget.month + '月'}"></span>
+                    </td>
+                    <td th:text="${#numbers.formatDecimal(budget.amount, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(budget.spent, 1, 2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(budget.remaining, 1, 2)}"
+                        th:classappend="${budget.remaining >= 0 ? 'text-success' : 'text-danger'}"></td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar"
+                                 th:classappend="${budget.percentage > 100 ? 'over-budget' : (budget.percentage > 80 ? 'warning-budget' : 'safe-budget')}"
+                                 role="progressbar"
+                                 th:style="'width:' + ${budget.percentage > 100 ? 100 : budget.percentage} + '%'"
+                                 th:text="${#numbers.formatDecimal(budget.percentage, 1, 1) + '%'}">
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a th:href="|/budget/delete/${budget.id}|" 
+                           onclick="return confirm('确定删除该预算吗？')"
+                           class="btn btn-danger btn-sm">删除</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 预算说明 -->
+<div class="panel panel-info">
+    <div class="panel-heading">
+        ℹ️ 说明
+    </div>
+    <div class="panel-body">
+        <ul>
+            <li><span class="label label-success">绿色</span> 预算使用率 ≤ 80%，状态良好</li>
+            <li><span class="label label-warning">黄色</span> 预算使用率 80% - 100%，需要注意</li>
+            <li><span class="label label-danger">红色</span> 预算使用率 > 100%，已超支</li>
+        </ul>
+    </div>
+</div>
+</div>
+</body>
+</html>

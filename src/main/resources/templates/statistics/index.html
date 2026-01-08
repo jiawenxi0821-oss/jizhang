@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>数据统计</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 20px;
+        }
+        .navbar-custom .navbar-brand {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 18px 15px;
+        }
+        .navbar-custom .navbar-brand:hover {
+            color: #f0f0f0;
+        }
+        .navbar-custom .nav > li > a {
+            color: white;
+            font-size: 15px;
+            padding: 20px 20px;
+            transition: all 0.3s ease;
+        }
+        .navbar-custom .nav > li > a:hover,
+        .navbar-custom .nav > li > a:focus {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+        }
+        .navbar-custom .nav > li.active > a {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .user-info {
+            color: rgba(255,255,255,0.9);
+            padding: 20px 15px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">
+                    💰 个人记账系统
+                </a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li><a href="/budget/list">💵 预算管理</a></li>
+                <li class="active"><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li th:if="${session.loginUser != null}">
+                    <span class="user-info">
+                        👤 
+                        欢迎，<span th:text="${session.loginUser.username}">用户</span>
+                    </span>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/profile">⚙️ 个人信息</a>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/logout">🚪 退出</a>
+                </li>
+                <li th:if="${session.loginUser == null}">
+                    <a href="/user/login">🔑 登录</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+<div class="container">
+<h2>数据统计与分析</h2>
+<br/>
+
+<!-- 筛选条件 -->
+<div class="row">
+    <div class="col-md-6">
+        <form class="form-inline" method="get" action="/statistics/index">
+            <div class="form-group">
+                <label>年份：</label>
+                <select name="year" class="form-control" onchange="this.form.submit()">
+                    <option th:each="y : ${#numbers.sequence(2020, 2030)}" 
+                            th:value="${y}" th:text="${y}"
+                            th:selected="${y == currentYear}"></option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-left: 15px;">
+                <label>月份：</label>
+                <select name="month" class="form-control" onchange="this.form.submit()">
+                    <option value="">全部</option>
+                    <option th:each="m : ${#numbers.sequence(1, 12)}" 
+                            th:value="${m}" th:text="${m + '月'}"
+                            th:selected="${m == currentMonth}"></option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6 text-right">
+        <a href="/statistics/export" class="btn btn-success">导出Excel</a>
+        <a href="/bill/list-page" class="btn btn-default">返回账单列表</a>
+    </div>
+</div>
+<br/>
+
+<!-- 图表区域 -->
+<div class="row">
+    <!-- 月度收支趋势图 -->
+    <div class="col-md-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">月度收支趋势</div>
+            <div class="panel-body">
+                <div id="trendChart" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    <!-- 分类占比饼图 -->
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">分类占比</div>
+            <div class="panel-body">
+                <div id="pieChart" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 年度统计表格 -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">年度统计汇总</div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>年份</th>
+                            <th>收入</th>
+                            <th>支出</th>
+                            <th>结余</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="stat : ${yearlyStats}">
+                            <td th:text="${stat.label}"></td>
+                            <td th:text="${#numbers.formatDecimal(stat.income, 1, 2)}"></td>
+                            <td th:text="${#numbers.formatDecimal(stat.expense, 1, 2)}"></td>
+                            <td th:text="${#numbers.formatDecimal(stat.income - stat.expense, 1, 2)}"
+                                th:classappend="${stat.income - stat.expense >= 0 ? 'text-success' : 'text-danger'}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // 月度趋势数据
+    var monthlyStats = [[${monthlyStats}]];
+    var labels = monthlyStats.map(function(item) { return item.label; });
+    var incomeData = monthlyStats.map(function(item) { return item.income || 0; });
+    var expenseData = monthlyStats.map(function(item) { return item.expense || 0; });
+    
+    // 分类占比数据
+    var categoryStats = [[${categoryStats}]];
+    var pieData = categoryStats.map(function(item) {
+        return { name: item.label, value: item.amount || 0 };
+    });
+
+    // 月度趋势图
+    var trendChart = echarts.init(document.getElementById('trendChart'));
+    trendChart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['收入', '支出'] },
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        series: [
+            { name: '收入', type: 'bar', data: incomeData, itemStyle: { color: '#5cb85c' } },
+            { name: '支出', type: 'bar', data: expenseData, itemStyle: { color: '#d9534f' } }
+        ]
+    });
+
+    // 分类占比饼图
+    var pieChart = echarts.init(document.getElementById('pieChart'));
+    pieChart.setOption({
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        series: [{
+            type: 'pie',
+            radius: '70%',
+            data: pieData,
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    });
+
+    // 窗口大小变化时重绘图表
+    window.addEventListener('resize', function() {
+        trendChart.resize();
+        pieChart.resize();
+    });
+</script>
+</div>
+</body>
+</html>

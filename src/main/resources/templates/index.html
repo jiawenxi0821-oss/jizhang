@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>个人记账系统</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 0;
+        }
+        .navbar-custom .navbar-brand {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 18px 15px;
+        }
+        .navbar-custom .navbar-brand:hover {
+            color: #f0f0f0;
+        }
+        .navbar-custom .nav > li > a {
+            color: white;
+            font-size: 15px;
+            padding: 20px 20px;
+            transition: all 0.3s ease;
+        }
+        .navbar-custom .nav > li > a:hover,
+        .navbar-custom .nav > li > a:focus {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+        }
+        .user-info {
+            color: rgba(255,255,255,0.9);
+            padding: 20px 15px;
+            display: inline-block;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+        .hero-section p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .feature-card {
+            border: none;
+            border-radius: 12px;
+            padding: 30px 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+        .feature-card h4 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+        .feature-card p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            text-align: center;
+            margin: 50px 0 40px;
+            font-size: 28px;
+            color: #333;
+        }
+        .features-highlight {
+            background: #f8f9fa;
+            padding: 50px 0;
+            margin-top: 50px;
+        }
+        .highlight-item {
+            text-align: center;
+            padding: 20px;
+        }
+        .highlight-item h4 {
+            font-size: 18px;
+            margin: 15px 0 10px;
+            color: #333;
+        }
+        .highlight-item p {
+            color: #666;
+            font-size: 14px;
+        }
+        footer {
+            background: #333;
+            color: #aaa;
+            padding: 30px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">
+                    💰 个人记账系统
+                </a>
+            </div>
+            <!-- 只有登录后才显示功能菜单 -->
+            <ul class="nav navbar-nav" th:if="${session.loginUser != null}">
+                <li><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li><a href="/budget/list">💰 预算管理</a></li>
+                <li><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li th:if="${session.loginUser != null}">
+                    <span class="user-info">
+                        👤 欢迎，<span th:text="${session.loginUser.username}">用户</span>
+                    </span>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/profile">⚙️ 个人信息</a>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/logout">🚪 退出</a>
+                </li>
+                <li th:if="${session.loginUser == null}">
+                    <a href="/user/toLogin">🔑 登录</a>
+                </li>
+                <li th:if="${session.loginUser == null}">
+                    <a href="/user/toRegister">👤 注册</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero区域 -->
+    <div class="hero-section">
+        <div class="container">
+            <h1>💰 个人记账系统</h1>
+            <p class="lead">轻松管理您的收支，掌控财务状况，让理财更简单</p>
+            <div th:if="${session.loginUser == null}" style="margin-top: 30px;">
+                <a href="/user/toLogin" class="btn btn-default btn-lg" style="margin-right: 15px;">
+                    🔑 立即登录
+                </a>
+                <a href="/user/toRegister" class="btn btn-success btn-lg">
+                    👤 免费注册
+                </a>
+            </div>
+            <div th:if="${session.loginUser != null}" style="margin-top: 30px;">
+                <a href="/bill/list-page" class="btn btn-default btn-lg">
+                    ▶️ 开始记账
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能模块 - 只有登录后才显示 -->
+    <div class="container" th:if="${session.loginUser != null}">
+        <h2 class="section-title">功能导航</h2>
+        <div class="row">
+            <!-- 收支记录管理 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h4>收支记录</h4>
+                    <p>管理日常收入与支出记录，随时查看账目明细</p>
+                    <a href="/bill/list-page" class="btn btn-primary btn-block">进入管理</a>
+                </div>
+            </div>
+
+            <!-- 分类管理 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">🏷️</div>
+                    <h4>分类管理</h4>
+                    <p>自定义收支分类标签，让账目更清晰有序</p>
+                    <a href="/billType/list" class="btn btn-primary btn-block">进入管理</a>
+                </div>
+            </div>
+
+            <!-- 预算管理 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h4>预算管理</h4>
+                    <p>设置月度预算并实时监控执行情况</p>
+                    <a href="/budget/list" class="btn btn-primary btn-block">进入管理</a>
+                </div>
+            </div>
+
+            <!-- 数据统计 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h4>数据统计</h4>
+                    <p>收支趋势图和分类占比分析，财务一目了然</p>
+                    <a href="/statistics/index" class="btn btn-primary btn-block">查看统计</a>
+                </div>
+            </div>
+
+            <!-- 数据导出 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h4>数据导出</h4>
+                    <p>导出Excel报表，方便备份和分析</p>
+                    <a href="/statistics/export" class="btn btn-primary btn-block">导出数据</a>
+                </div>
+            </div>
+
+            <!-- 个人信息 -->
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h4>个人信息</h4>
+                    <p>管理个人资料和账户安全设置</p>
+                    <a href="/user/profile" class="btn btn-primary btn-block">个人中心</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统特色 -->
+    <div class="features-highlight">
+        <div class="container">
+            <h2 class="section-title" style="margin-top: 0;">系统特色</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="highlight-item">
+                        <span style="font-size: 40px; color: #667eea;">🔒</span>
+                        <h4>安全可靠</h4>
+                        <p>用户数据加密存储，保护您的隐私安全</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="highlight-item">
+                        <span style="font-size: 40px; color: #667eea;">📱</span>
+                        <h4>操作简单</h4>
+                        <p>界面简洁直观，操作便捷高效</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="highlight-item">
+                        <span style="font-size: 40px; color: #667eea;">📊</span>
+                        <h4>数据可视</h4>
+                        <p>图表展示收支趋势，财务状况一目了然</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="highlight-item">
+                        <span style="font-size: 40px; color: #667eea;">🔔</span>
+                        <h4>智能提醒</h4>
+                        <p>预算监控提醒，帮您合理规划开支</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>&copy; 2026 个人记账系统. All rights reserved.</p>
+    </footer>
+</body>
+</html>

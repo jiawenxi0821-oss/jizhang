@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.UserMapper">
+    <insert id="save" parameterType="User">
+        INSERT INTO user(username, password, email, phone, real_name, create_time)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{realName}, #{createTime})
+    </insert>
+
+    <select id="findByUsername" resultType="User">
+        SELECT id, username, password, email, phone, real_name, create_time, update_time
+        FROM user
+        WHERE username = #{username}
+    </select>
+    
+    <select id="findById" resultType="User">
+        SELECT id, username, password, email, phone, real_name, create_time, update_time
+        FROM user
+        WHERE id = #{id}
+    </select>
+    
+    <update id="updateProfile" parameterType="User">
+        UPDATE user SET 
+            email = #{email},
+            phone = #{phone},
+            real_name = #{realName},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <update id="updatePassword">
+        UPDATE user SET 
+            password = #{newPassword},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <select id="getUserStats" resultType="com.example.demo.dto.UserStatsDTO">
+        SELECT 
+            COUNT(*) as totalBills,
+            COALESCE(SUM(CASE WHEN bt.name = '收入' THEN b.price ELSE 0 END), 0) as totalIncome,
+            COALESCE(SUM(CASE WHEN bt.name != '收入' THEN b.price ELSE 0 END), 0) as totalExpense
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+    </select>
+</mapper>

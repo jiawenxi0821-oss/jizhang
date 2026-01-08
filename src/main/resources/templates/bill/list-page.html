@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>账单列表</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"></link>
+    <script type="text/javascript" src="/js/My97DatePicker/WdatePicker.js"></script>
+    <script type="text/javascript" src="/js/My97DatePicker/lang/zh-cn.js"></script>
+    <script type="text/javascript" src="/js/jquery/jquery-1.10.2.min.js"></script>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 20px;
+        }
+        .navbar-custom .navbar-brand {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 18px 15px;
+        }
+        .navbar-custom .navbar-brand:hover {
+            color: #f0f0f0;
+        }
+        .navbar-custom .nav > li > a {
+            color: white;
+            font-size: 15px;
+            padding: 20px 20px;
+            transition: all 0.3s ease;
+        }
+        .navbar-custom .nav > li > a:hover,
+        .navbar-custom .nav > li > a:focus {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+        }
+        .navbar-custom .nav > li.active > a {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .user-info {
+            color: rgba(255,255,255,0.9);
+            padding: 20px 15px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">
+                    💰 个人记账系统
+                </a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li><a href="/budget/list">💰 预算管理</a></li>
+                <li><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li th:if="${session.loginUser != null}">
+                    <span class="user-info">
+                        👤 欢迎，<span th:text="${session.loginUser.username}">用户</span>
+                    </span>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/profile">⚙️ 个人信息</a>
+                </li>
+                <li th:if="${session.loginUser != null}">
+                    <a href="/user/logout">🚪 退出</a>
+                </li>
+                <li th:if="${session.loginUser == null}">
+                    <a href="/user/login">🔑 登录</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+<div class="container">
+<br/>
+<h1>账单列表</h1>
+<br/><br/>
+<div class="with:80%">
+    <form class="form-inline" id="qf"   action="/bill/list-page"  method="post">
+		<!-- TODO 分页相关参数-->
+        <input type="hidden" name="pageNum" id="pageNum" th:value="${pageInfo.pageNum}">
+        <input type="hidden" name="pageSize" id="pageSize" th:value="${pageInfo.pageSize}">
+
+        <div class="form-group">
+            <label for="typeId" class="control-label">类型</label>
+            <select name="typeId" id="typeId" class="form-control">
+                <option value="">全部</option>
+                <option th:each="billType : ${billTypeList}"
+                        th:value="${billType.id}" 
+                        th:text="${billType.name}"
+                        th:selected="${billType.id==bill.typeId}"
+                ></option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date1" class="control-label" >开始时间</label>
+            <input type="text" class="form-control"
+                   autocomplete="off"
+                   th:value="${bill.date1 != null ? #dates.format(bill.date1,'yyyy-MM-dd') : ''}"
+                   name="date1" id="date1" placeholder="开始时间" onclick="WdatePicker()"/>
+        </div>
+        <div class="form-group">
+            <label for="date2" class="control-label">结束时间</label>
+            <input type="text" class="form-control"
+                   autocomplete="off"
+                   th:value="${bill.date2 != null ? #dates.format(bill.date2,'yyyy-MM-dd') : ''}"
+                   name="date2"  id="date2" placeholder="结束时间" onclick="WdatePicker()"/>
+        </div>
+        <div class="form-group">
+            <input type="button" id="searchBtn" value="查询" class="btn btn-info" />
+            &nbsp; &nbsp;
+            <a href="/bill/list-page" class="btn btn-info">重置</a>
+            &nbsp; &nbsp;
+            <a href="/bill/toAdd" th:href="@{/bill/toAdd}" class="btn btn-info">添加</a>
+            &nbsp; &nbsp;
+            <a href="/statistics/index" class="btn btn-success">数据统计</a>
+            &nbsp; &nbsp;
+            <a href="/billType/list" class="btn btn-warning">分类管理</a>
+            &nbsp; &nbsp;
+            <a href="/budget/list" class="btn btn-info">预算管理</a>
+        </div>
+    </form>
+</div>
+<br/>
+
+<div class="with:80%">
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>
+                <input type="checkbox"  id="checkAll"/>
+                <button type="button" class="btn btn-danger" id="btnBatch">删 除</button><!---小按钮--->
+            </th>
+            <th>#</th>
+            <th>标题</th>
+            <th>时间</th>
+            <th>金额</th>
+            <th>类别</th>
+            <th>说明</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+		<!-- TODO 页面循环-->
+        <form action="/bill/batchDel" method="post" id="df">
+        <tr th:each="bill:${pageInfo.list}">
+
+            <td >
+                <input type="checkbox" name="ids" th:value="${bill.id}"/>
+
+            </td>
+            <td th:text="${bill.id}"></td>
+            <td th:text="${bill.title}">标题</td>
+            <td th:text="${#dates.format(bill.billTime,'yyyy-MM-dd')}">时间</td>
+            <td th:text="${bill.price}">金额</td>
+            <td th:text="${bill.name}">类别</td>
+            <td th:text="${bill.explains}">说明</td>
+            <td>
+                <!---<a th:href="'/bill/delete/'+${bill.id}" onclick="return confirm('你确定删除吗？')">
+                    <button type="button" class="btn btn-danger" >删 除1</button>
+                </a>--->
+                <a th:href="|/bill/toUpdate/${bill.id}|">
+                <button type="button" class="btn btn-info" >编 辑</button>
+                </a>
+                <a th:href="@{/bill/delete2(id=${bill.id})}" onclick="return confirm('你确定删除吗？')">
+                    <button type="button" class="btn btn-danger">删 除</button>
+                </a>
+
+            </td>
+        </tr>
+        </form>
+        </tbody>
+    </table>
+</div>
+
+<!-- TODO 分页工具类-->
+<ul class="pagination">
+    <li><button class="btn btn-default" id="first">第一页</button></li>
+    <li><button class="btn btn-default" id="prev">上一页</button></li>
+     <li th:each="p: ${pageInfo.navigatepageNums}">
+          <button class="btn btn-default" th:text="${p}" name="pn" th:disabled="${p == pageInfo.pageNum}" >#</button>
+      </li>
+    <li><button class="btn btn-default" id="next" >下一页</button></li>
+    <li><button class="btn btn-default" id="last">最后页</button></li>
+
+    <span style="font-size: 18px;margin-left: 5px;" th:text="|共${pageInfo.total}条记录,共${pageInfo.pages}页, 每页 ${pageInfo.pageSize} 行数|">共条  记录,共  页, 每页  行数</span>
+    <select id="setRows" >
+        <option value="5"   th:selected="${pageInfo.pageSize == 5}" >5</option>
+        <option value="10"  th:selected="${pageInfo.pageSize == 10}">10</option>
+        <option value="20"  th:selected="${pageInfo.pageSize == 20}">20</option>
+        <option value="30"  th:selected="${pageInfo.pageSize == 30}">30</option>
+    </select>
+
+</ul>
+
+<!-- TODO 分页的js代码-->
+<script type="text/javascript">
+    var pageNum = [[${pageInfo.pageNum}]]//当前页
+    var pages = [[${pageInfo.pages}]]
+    var  hasPreviousPage = [[${pageInfo.hasPreviousPage}]]//有没有上一页
+    var  hasNextPage = [[${pageInfo.hasNextPage}]]//有没有下一页
+    //第一页
+    $(function(){
+        $("#checkAll").click(function (){
+           var flag =  $(this).prop("checked")
+           $('[name="ids"]').prop("checked",flag)
+        });
+
+        $('[name="ids"]').click(function (){
+            var checkLen =$('[name="ids"]').length;//一共有多少个复选框
+            var cedLen =$('[name="ids"]:checked').length;//有几个复选框打勾了
+            var flag = checkLen == cedLen;
+            $("#checkAll").prop("checked",flag);
+        })
+
+
+        $("#btnBatch").click(function(){
+            if($('[name="ids"]:checked').length==0)
+            {
+                alert("请至少选择一条数据!");
+                return ;
+            }else {
+                $("#df").submit();
+            }
+
+        })
+
+        $("#first").click(function (){
+            $("#pageNum").val(1)
+            $("#qf").submit();
+        });
+    });
+    //上一页
+        $("#prev").click(function (){
+            $("#pageNum").val(pageNum-1)
+            $("#qf").submit();
+        });
+    //下一页
+        $("#next").click(function (){
+            $("#pageNum").val(pageNum+1)
+            $("#qf").submit();
+        });
+    //最后一页
+    $(function(){
+        $("#last").click(function (){
+            $("#pageNum").val(pages)
+            $("#qf").submit();
+        });
+    $("button[name='pn']").click(function (){
+        $("#pageNum").val($(this).html())
+        $("#qf").submit();
+    })
+    //边界判断
+    if(!hasPreviousPage)
+    {
+        $("#first").prop("disabled",true)
+        $("#prev").prop("disabled",true)
+    }
+    if(!hasNextPage)
+    {
+        $("#last").prop("disabled",true)
+        $("#next").prop("disabled",true)
+    }
+
+    $("#setRows").change(function (){
+        var pageSize = $(this).val()
+        $("#pageSize").val(pageSize)
+        $("#qf").submit();
+    })
+     $("#searchBtn").click(function (){
+         $("#pageNum").val(1);
+         $("#qf").submit();
+     })
+    });
+</script>
+
+</div>
+</body>
+</html>

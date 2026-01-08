@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>设置预算 - 个人记账系统</title>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 60px;
+            margin-bottom: 30px;
+        }
+        .navbar-custom .navbar-brand { color: white; font-size: 22px; font-weight: bold; padding: 18px 15px; }
+        .navbar-custom .nav > li > a { color: white; font-size: 15px; padding: 20px 20px; }
+        .navbar-custom .nav > li > a:hover { background-color: rgba(255,255,255,0.15); }
+        .navbar-custom .nav > li.active > a { background-color: rgba(255,255,255,0.2); }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .form-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 35px;
+        }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { font-weight: 600; color: #333; margin-bottom: 10px; font-size: 15px; display: block; }
+        .form-control {
+            height: 50px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-size: 15px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .btn-default { padding: 14px 40px; border-radius: 8px; font-size: 16px; }
+        .form-hint { font-size: 13px; color: #888; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">💰 个人记账系统</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a href="/bill/list-page">📊 收支记录</a></li>
+                <li><a href="/billType/list">🏷️ 分类管理</a></li>
+                <li class="active"><a href="/budget/list">💰 预算管理</a></li>
+                <li><a href="/statistics/index">📈 数据统计</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>➕ 设置新预算</h2>
+        </div>
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="form-panel">
+                    <form action="/budget/add" method="post">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>📅 年份</label>
+                                    <select class="form-control" name="year" required>
+                                        <option th:each="y : ${#numbers.sequence(2020, 2030)}" th:value="${y}" th:text="${y + '年'}" th:selected="${y == currentYear}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>🕐 月份</label>
+                                    <select class="form-control" name="month">
+                                        <option value="">全年预算</option>
+                                        <option th:each="m : ${#numbers.sequence(1, 12)}" th:value="${m}" th:text="${m + '月'}" th:selected="${m == currentMonth}"></option>
+                                    </select>
+                                    <p class="form-hint">不选择月份则为年度预算</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>🏷️ 预算分类</label>
+                            <select class="form-control" name="typeId">
+                                <option value="">总预算（不限分类）</option>
+                                <option th:each="type : ${billTypeList}" th:value="${type.id}" th:text="${type.name}"></option>
+                            </select>
+                            <p class="form-hint">不选择分类则为总预算</p>
+                        </div>
+                        <div class="form-group">
+                            <label>💰 预算金额</label>
+                            <input type="number" step="0.01" class="form-control" name="amount" placeholder="请输入预算金额" required/>
+                        </div>
+                        <div class="form-group" style="margin-top: 35px;">
+                            <button type="submit" class="btn btn-primary">✅ 保存预算</button>
+                            <a href="/budget/list" class="btn btn-default" style="margin-left: 15px;">⬅️ 返回列表</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

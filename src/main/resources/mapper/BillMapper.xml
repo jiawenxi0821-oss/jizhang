@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.demo.mapper.BillMapper">
+    <select id="get" resultType="Bill">
+        SELECT
+            b.id,
+            b.title,
+            b.bill_time,
+            b.type_id,
+            b.price,
+            b.explains,
+            bt.name
+        FROM
+            bill as b
+        LEFT JOIN
+            bill_type as bt
+        ON
+            b.type_id = bt.id
+        <where>
+            <if test="typeId!=null">
+                b.type_id = #{typeId}
+            </if>
+            <if test="date1!=null">
+                and b.bill_time &gt; #{date1}
+            </if>
+            <if test="date2!=null">
+                and b.bill_time &lt; #{date2}
+            </if>
+        </where>
+        order by b.bill_time desc
+    </select>
+    <insert id="save" parameterType="Bill">
+        INSERT INTO  `bill`(
+           `title`,
+            `bill_time`,
+            `type_id`,
+            `price`,
+            `explains`
+        )
+        VALUES
+        (
+            #{title},
+            #{billTime},
+            #{typeId},
+            #{price},
+            #{explains}
+        )
+    </insert>
+    <delete id="deleteById" parameterType="string">
+        delete from  bill where  id = #{id}
+    </delete>
+
+    <!-- 根据ID查询账单 -->
+    <select id="getById" parameterType="string" resultType="Bill">
+        SELECT b.id, b.title, b.bill_time, b.type_id, b.price, b.explains, bt.name
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE b.id = #{id}
+    </select>
+
+    <!-- 更新账单 -->
+    <update id="update" parameterType="Bill">
+        UPDATE bill SET
+            title = #{title},
+            bill_time = #{billTime},
+            type_id = #{typeId},
+            price = #{price},
+            explains = #{explains}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="batchDelete">
+        delete from bill where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 获取所有账单（用于导出） -->
+    <select id="getAll" resultType="Bill">
+        SELECT b.id, b.title, b.bill_time, b.type_id, b.price, b.explains, bt.name
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        ORDER BY b.bill_time DESC
+    </select>
+
+    <!-- 按月统计（某年每月收支） -->
+    <select id="getMonthlyStats" resultType="com.example.demo.dto.StatisticsDTO">
+        SELECT 
+            DATE_FORMAT(b.bill_time, '%Y-%m') as label,
+            SUM(CASE WHEN bt.name = '收入' THEN b.price ELSE 0 END) as income,
+            SUM(CASE WHEN bt.name != '收入' THEN b.price ELSE 0 END) as expense
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE YEAR(b.bill_time) = #{year}
+        GROUP BY DATE_FORMAT(b.bill_time, '%Y-%m')
+        ORDER BY label
+    </select>
+
+    <!-- 按日统计（某月每日收支） -->
+    <select id="getDailyStats" resultType="com.example.demo.dto.StatisticsDTO">
+        SELECT 
+            DATE_FORMAT(b.bill_time, '%Y-%m-%d') as label,
+            SUM(CASE WHEN bt.name = '收入' THEN b.price ELSE 0 END) as income,
+            SUM(CASE WHEN bt.name != '收入' THEN b.price ELSE 0 END) as expense
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        WHERE YEAR(b.bill_time) = #{year} AND MONTH(b.bill_time) = #{month}
+        GROUP BY DATE_FORMAT(b.bill_time, '%Y-%m-%d')
+        ORDER BY label
+    </select>
+
+    <!-- 按年统计 -->
+    <select id="getYearlyStats" resultType="com.example.demo.dto.StatisticsDTO">
+        SELECT 
+            YEAR(b.bill_time) as label,
+            SUM(CASE WHEN bt.name = '收入' THEN b.price ELSE 0 END) as income,
+            SUM(CASE WHEN bt.name != '收入' THEN b.price ELSE 0 END) as expense
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        GROUP BY YEAR(b.bill_time)
+        ORDER BY label
+    </select>
+
+    <!-- 按分类统计（饼图） -->
+    <select id="getCategoryStats" resultType="com.example.demo.dto.StatisticsDTO">
+        SELECT bt.name as label, SUM(b.price) as amount
+        FROM bill b
+        LEFT JOIN bill_type bt ON b.type_id = bt.id
+        <where>
+            <if test="year != null">
+                YEAR(b.bill_time) = #{year}
+            </if>
+            <if test="month != null">
+                AND MONTH(b.bill_time) = #{month}
+            </if>
+        </where>
+        GROUP BY bt.name
+        ORDER BY amount DESC
+    </select>
+</mapper>

@@ -1,0 +1,22 @@
+server:
+  port: 8089
+spring:
+  application:
+    name: demo1
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/billdb?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+    username: root
+    password: ${DB_PASSWORD:your_password_here}
+  thymeleaf:
+    cache: false
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.example.demo.entity
+logging:
+  level:
+    com.example.*: debug
+
